@@ -89,7 +89,6 @@ def cadastro(agencia, num_conta, banco_dados):
     }
     banco_dados[num_conta]=conta
     print(f'Bem-vindo {nome}! Segue informações da sua conta:\n\nAgêngia: {agencia}\nC/C: {num_conta}')
-    print(banco_dados)
 
     return num_conta, banco_dados
 
