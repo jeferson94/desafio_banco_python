@@ -198,5 +198,3 @@ def menu(banco_dados, num_conta):
 
 
 main()
-
-main()
