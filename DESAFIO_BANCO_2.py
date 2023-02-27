@@ -1,39 +1,43 @@
 
-def deposito(a,b,c):
-    if a > 0:
-        b += a
-        c += f'D + R${a}\n'
-        print(f'Saldo em conta: R${b}')
+def deposito(valor_deposito, saldo_conta, extrato_conta):
+    if valor_deposito > 0:
+        saldo_conta += valor_deposito
+        extrato_conta += f'D + R${valor_deposito}\n'
+        print(f'Saldo em conta: R${saldo_conta}')
     else:
         print('A quantia para depósito deve ser maior que zero.')
-    return b,c
+    return saldo_conta, extrato_conta
     
-def saque(a, b, c, d, e, f):
-        if b > 0 and f > c:
-            a = int(input('Quanto deseja sacar? R$'))
-            if a <= d:
-                check_saldo = b - a
-                if check_saldo > 0:
-                    b -= a
+def saque(*, saldo_conta, num_saque, limite, extrato, limite_saques):
+        if saldo_conta > 0 and limite_saques > num_saque:
+            valor = int(input('Quanto deseja sacar? R$'))
+            if valor <= limite:
+                check_saldo = saldo_conta - valor
+                if check_saldo >= 0:
+                    saldo_conta -= valor
                     print(f'Saque realizado.')
-                    c += 1
-                    e += f'S - R${a}\n'
-                    print(c)
+                    num_saque += 1
+                    extrato += f'S - R${valor}\n'
+                    print(f'\n\nSaques realizados hoje: {num_saque}')
                 else:
                     print(f'Saldo insuficiente.')
             else:
                 print('Limite de saque excedido (R$500).')
-        elif b == 0:
+        elif saldo_conta == 0:
             print('Sem saldo na conta.')
         else:
                 print('Limite de saques atingido para o dia. Retorne amanhã ou fale com o gerente da sua conta.')
-        return a, b, c, e
+        return saldo_conta, num_saque, extrato
 
-def extrato(a, b):
-    print('Não foram realizadas transações.'if not b else b)
-    print(f'Saldo: R${a:.2f}')
+
+def extrato(saldo_conta, /, *,  extrato_conta):
+    if not extrato_conta:
+         print('Sem histórico de transações.')
+    else:
+         print(extrato_conta)
+    print(f'Saldo: R${saldo_conta}')
     
-    return a, b
+    return saldo_conta, extrato_conta
 
 def acesso(tentativa, banco_dados):
     while tentativa < 3:
@@ -56,47 +60,75 @@ def acesso(tentativa, banco_dados):
     return banco_dados
     
 
-def alterar_senha(a):
+def alterar_senha(banco_dados):
     insert_conta = int(input('conta: '))
     insert_nome = str(input('nome: ' )).strip()
     insert_cpf = int(input('Digite CPF: '))
-    if insert_nome == a[insert_conta]['NOME'] and insert_cpf == a[insert_conta]['CPF']:
+    if insert_nome == banco_dados[insert_conta]['NOME'] and insert_cpf == banco_dados[insert_conta]['CPF']:
         while True:
             nova_senha = int(input('digite a nova senha: '))
             confirme_senha = int(input('digite a nova senha: '))
             if nova_senha == confirme_senha:
-                a[insert_conta]['SENHA'] = nova_senha
+                banco_dados[insert_conta]['SENHA'] = nova_senha
                 break
             else:
                 print('Valores diferentes. Tente novamente.')
                 continue
     else:
         print('Dados incorretos. Fim do programa')
-    a = acesso(0, a)
-    return a
+    banco_dados = acesso(0, banco_dados)
+    return banco_dados
+
 
 def cadastro(agencia, num_conta, banco_dados):
-    nome = str(input('Digite o seu nome completo: ')).rstrip().lstrip().upper()
     cpf = int(input('Digite o seu CPF (sem pontos e traço): '))
-    endereco = str(input('Digite o seu endereco (rua, num, bairro, cidade/uf): ')).upper()
-    senha = int(input('Digite sua senha: '))
-    num_conta += 1
-    conta = {
-        'NOME' : nome,
-        'CPF' : cpf,
-        'ENDERECO' : endereco,
-        'SENHA' : senha
-    }
-    banco_dados[num_conta]=conta
-    print(f'Bem-vindo {nome}! Segue informações da sua conta:\n\nAgêngia: {agencia}\nC/C: {num_conta}')
+    nome = str(input('Digite o seu nome completo: ')).rstrip().lstrip().upper()
+    usuario = verif_usuario(cpf, nome, banco_dados)
+
+    if usuario:
+         print('JÁ EXISTE UM OUTRO USUARIO COM ESTE MESMO CPF, TENTE NOVAMENTE OU CONVERSE COM O GERENTE.')
+         cadastro(agencia=agencia, num_conta=num_conta, banco_dados=banco_dados)
+    else:
+        endereco = str(input('Digite o seu endereco (rua, num, bairro, cidade/uf): ')).upper()
+        senha = int(input('Digite sua senha: '))
+        num_conta += 1
+        conta = {
+            'AGENCIA' : agencia,
+            'CONTA' : num_conta,
+            'NOME' : nome,
+            'CPF' : cpf,
+            'ENDERECO' : endereco,
+            'SENHA' : senha
+        }
+        banco_dados[num_conta]=conta
+        print(f'Bem-vindo {nome}! Segue informações da sua conta:\n\nAgência: {agencia}\nC/C: {num_conta}')
 
     return num_conta, banco_dados
 
+def verif_usuario(cpf, nome, banco_dados):
+    usuario_encontrado = []
+    for conta in banco_dados:
+        for usuario in banco_dados[conta]:
+            if cpf == banco_dados[conta]['CPF'] and nome != banco_dados[conta]['NOME']:
+                 usuario_encontrado.append(usuario)
+            else:
+                 None
+    return usuario_encontrado[0] if usuario_encontrado else None
+
+def listar(*, banco_dados):
+        lista = []
+        lista.append(banco_dados)
+        for conta in lista:
+             for val in conta.values():
+                  print('AGENCIA\tCONTA\tNOME')
+                  print(f"{val['AGENCIA']}\t{val['CONTA']}\t{val['NOME']}")
+        
+     
 def main():
 
-    AGENCIA = 1
-    conta = 0000
-    bd_agencia = {}
+    AGENCIA = "0001"
+    num_conta = 0000
+    banco_dados = {}
     home_page = '''
 
 [A] ACESSAR CONTA (CLIENTES)
@@ -109,26 +141,27 @@ def main():
         opcao = str(input(home_page)).upper()
 
         if opcao == 'A':
-            bd_agencia = acesso(0, bd_agencia)
+            banco_dados = acesso(0, banco_dados)
             
 
         elif opcao == 'C':
-            conta, bd_agencia = cadastro(agencia=AGENCIA, num_conta=conta, banco_dados=bd_agencia)
+            num_conta, banco_dados  = cadastro(agencia=AGENCIA, num_conta=num_conta, banco_dados=banco_dados)
             
 
         elif opcao == 'L':
-            print(bd_agencia)
+            listar(banco_dados=banco_dados)
+
 
 
 def menu(banco_dados, num_conta):
-
+    import sys
     saldo = 0
     extrato_conta = ''
     numero_saques = 0
     LIMITE_SAQUES = 3
     LIMITE = 500
-    valor_saque = 0
-    print(F'==============BEM-VINDO {banco_dados[num_conta]['NOME']}!===============')
+    print(f'==============BEM-VINDO {banco_dados[num_conta]["NOME"]}!===============') 
+
     main_menu = """
 
     [D] DEPOSITAR
@@ -149,19 +182,21 @@ def menu(banco_dados, num_conta):
 
 
             elif opcao == 'S':
-                    valor_saque, saldo, numero_saques, extrato_conta = saque(a=valor_saque, b=saldo, c=numero_saques, d=LIMITE, e=extrato_conta, f=LIMITE_SAQUES)
+                    saldo, numero_saques, extrato_conta = saque(saldo_conta=saldo, num_saque=numero_saques, limite=LIMITE, extrato=extrato_conta, limite_saques=LIMITE_SAQUES)
                 
 
             elif opcao == 'E':
                 print('Extrato')
-                saldo, extrato_conta = extrato(saldo, extrato_conta)
-
+                saldo, extrato_conta = extrato(saldo, extrato_conta=extrato_conta)
+ 
             elif opcao == 'Q':
                 print('Obrigado por usar nosso sistema. Tenha um bom dia!')
-                break
+                sys.exit()
 
             else:
                 print('Operacao inválida. Por favor selecione uma opção válida.')
 
+
+main()
 
 main()
